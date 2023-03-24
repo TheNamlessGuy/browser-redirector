@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <link rel="stylesheet" type="text/css" href="index.css">
+    <script src="index.js"></script>
+  </head>
+  <body>
+    <template id="redirect-template">
+      <div class="redirect">
+        <div>
+          <label>From:</label> <input class="from-input" type="text" placeholder="Regex...">
+        </div>
+        <div>
+          <label>To:</label> <input type="checkbox" class="internal-checkbox"> Internal <input class="to-input hidden" type="text" placeholder="URL"> <select class="to-select hidden"><option value="/src/helper-pages/blocked.html">Block</option></select>
+        </div>
+        <div>
+          <button class="remove-btn">Remove</button>
+        </div>
+      </div>
+    </template>
+
+    <div id="redirects-container"></div>
+    <button id="add-new-btn">Add new redirect</button>
+    <button id="save-btn">Save</button>
+  </body>
+</html>

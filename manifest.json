@@ -1,0 +1,57 @@
+{
+  "manifest_version": 2,
+  "name": "Redirector",
+  "version": "0.0.2",
+  "description": "Redirects URLs accessed depending on a given regex",
+  "author": "TheNamlessGuy",
+  "homepage_url": "https://github.com/TheNamlessGuy/browser-redirector",
+  "developer": {
+    "name": "TheNamlessGuy",
+    "url": "https://github.com/TheNamlessGuy/browser-redirector"
+  },
+
+  "icons": {
+    "16": "res/icons/redirector/16.png",
+    "19": "res/icons/redirector/19.png",
+    "32": "res/icons/redirector/32.png",
+    "38": "res/icons/redirector/38.png",
+    "48": "res/icons/redirector/48.png"
+  },
+
+  "permissions": [
+    "<all_urls>",
+    "activeTab",
+    "storage",
+    "unlimitedStorage"
+  ],
+
+  "page_action": {
+    "browser_style": true,
+    "default_icon": {
+      "16": "res/icons/processing/16.gif",
+      "19": "res/icons/processing/19.gif",
+      "32": "res/icons/processing/32.gif",
+      "38": "res/icons/processing/38.gif",
+      "48": "res/icons/processing/48.gif"
+    },
+    "default_title": "Redirector processing"
+  },
+
+  "background": {
+    "scripts": [
+      "src/redirects.js",
+      "src/background.js"
+    ]
+  },
+
+  "options_ui": {
+    "page": "src/options/index.html",
+    "browser_style": true
+  },
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "redirector@TheNamlessGuy.github.io"
+    }
+  }
+}

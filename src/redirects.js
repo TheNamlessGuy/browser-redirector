@@ -7,17 +7,11 @@ const Redirects = {
     let retval = to.url;
 
     for (let i = 1; i < match.length; ++i) {
-      retval = retval.replaceAll(`{{${i}}}`, match[i]);
+      retval = retval.replaceAll(`{{${i}}}`, match[i] == null ? '' : match[i]);
     }
 
     if (to.internal) {
       retval += `?url=${urlStr}`;
-    } else if (!retval.includes('://')) {
-      if (url.host.startsWith('www.') && !retval.startsWith('www.')) {
-        retval = `www.${retval}`;
-      }
-
-      retval = `${url.protocol}//${retval}`;
     }
 
     return {
@@ -31,7 +25,10 @@ const Redirects = {
     for (const redirect of Redirects._redirects) {
       const match = url.match(redirect.from);
       if (match != null) {
-        return Redirects._formatRedirect(url, redirect.to, match);
+        const formatted = Redirects._formatRedirect(url, redirect.to, match);
+        if (formatted.url !== url) {
+          return formatted;
+        }
       }
     }
 
@@ -39,8 +36,8 @@ const Redirects = {
   },
 
   _defaultRedirects: [
-    {from: {url: 'youtube.com/shorts/(.+)'}, to: {internal: false, url: 'youtube.com/watch?v={{1}}'}},
-    {from: {url: 'reddit.com'},              to: {internal: true,  url: '/src/helper-pages/blocked.html'}},
+    {from: {url: '^(http|https)://(www\\.)?youtube\\.com/shorts/(.+)'}, to: {internal: false, url: '{{1}}://{{2}}youtube.com/watch?v={{3}}'}},
+    {from: {url: '^(http|https)://(www\\.)?reddit\\.com'},              to: {internal: true,  url: '/src/helper-pages/blocked.html'}},
   ],
   _initOptions: async function() {
     const opts = await Redirects.getOptions();

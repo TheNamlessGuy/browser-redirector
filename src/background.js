@@ -8,6 +8,16 @@ const Background = {
     }
   },
 
+  addException: async function(url, idx) {
+    Redirects.addException(idx);
+    await Background.moveCurrentTabTo(url);
+  },
+
+  moveCurrentTabTo: async function(url, replaceState = true) {
+    const tabID = (await browser.tabs.query({currentWindow: true, active: true}))[0].id;
+    await browser.tabs.update(tabID, {url: url, loadReplace: replaceState});
+  },
+
   onTabActivation: function(activeInfo) {
     Redirects.showProcessingIcon(activeInfo.previousTabId, false);
     Redirects.showProcessingIcon(activeInfo.tabId);
@@ -19,5 +29,6 @@ const Background = {
     await Redirects.init();
   },
 };
+function getBackground() { return Background; }
 
 Background.init();

@@ -1,7 +1,40 @@
-.redirect {
-  border-bottom: 1px solid #000;
+.area .area-title {
+  cursor: pointer;
 }
 
-.hidden {
-  display: none;
+.area .content-hidden {
+  text-align: center;
+  font-style: italic;
+}
+
+.redirect {
+  border-bottom: 1px solid #000;
+  margin-bottom: 5px;
+  padding-bottom: 5px;
+}
+
+.redirect > div { margin-bottom: 5px; }
+.redirect > div:last-child { margin-bottom: 0; }
+.redirect .show { flex-grow: 1; }
+.redirect .active-container { cursor: pointer !important; }
+
+.flex { display: flex; }
+.hidden { display: none; }
+.separate {
+  display: flex;
+  justify-content: space-between;
+}
+
+#save-btn,
+#add-new-area-btn {
+  margin: 5px;
+  text-align: center;
+}
+
+#errors {
+  background-color: red;
+  color: white;
+  padding: 5px;
+  margin: 5px;
+  border-radius: 5px;
 }

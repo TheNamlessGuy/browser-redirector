@@ -7,22 +7,59 @@
     <script src="index.js"></script>
   </head>
   <body>
-    <template id="redirect-template">
+    <template id="template-area">
+      <fieldset class="area">
+        <legend class="area-title"></legend>
+        <div class="content">
+          <div class="separate">
+            <input class="area-name" type="text" placeholder="Area name...">
+            <button class="remove-btn">Remove area</button>
+          </div>
+          <fieldset class="redirects">
+            <legend>Redirects</legend>
+            <div class="redirect-container"></div>
+            <button class="add-redirect-btn">Add new redirect</button>
+          </fieldset>
+        </div>
+        <div class="content-hidden hidden">Content is hidden</div>
+      </div>
+    </template>
+
+    <template id="template-redirect">
       <div class="redirect">
-        <div>
-          <label>From:</label> <input class="from-input" type="text" placeholder="Regex...">
+        <div class="flex">
+          <label>From:</label> <input class="from-input show" type="text" placeholder="Regex...">
         </div>
         <div>
-          <label>To:</label> <input type="checkbox" class="internal-checkbox"> Internal <input class="to-input hidden" type="text" placeholder="URL"> <select class="to-select hidden"><option value="/src/helper-pages/blocked.html">Block</option></select>
+          <label>To:</label>
+          <select name="type" class="type">
+            <option value="regex">Regex</option>
+            <option value="internal">Internal</option>
+          </select>
         </div>
-        <div>
-          <button class="remove-btn">Remove</button>
+
+        <div class="type--regex flex">
+          <input class="type-regex-input show" type="text" placeholder="Result URL">
+        </div>
+        <div class="type--internal flex">
+          <select name="type-internal-select" class="type-internal-select show">
+            <option selected value="/src/helper-pages/hard-blocked.html">Hard block</option>
+            <option value="/src/helper-pages/soft-blocked.html">Soft block</option>
+          </select>
+        </div>
+
+        <div class="separate">
+          <span class="active-container">
+            <label>Active:</label> <input type="checkbox" class="active" checked>
+          </span>
+          <button class="remove-btn">Remove redirect</button>
         </div>
       </div>
     </template>
 
-    <div id="redirects-container"></div>
-    <button id="add-new-btn">Add new redirect</button>
+    <div id="area-container"></div>
+    <div id="errors" class="hidden"></div>
+    <button id="add-new-area-btn">Add new area</button>
     <button id="save-btn">Save</button>
   </body>
 </html>

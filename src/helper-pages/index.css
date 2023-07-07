@@ -9,6 +9,10 @@ body {
   justify-content: center;
 }
 
+p {
+  text-align: center;
+}
+
 .filled {
   color: #CC0;
 }

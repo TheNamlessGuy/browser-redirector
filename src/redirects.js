@@ -2,22 +2,25 @@ const RedirectTypes = {
   REGEX: 'regex',
   INTERNAL: 'internal',
 };
-function getRedirectTypes() { return RedirectTypes; }
 
 const Redirects = {
   _redirects: [],
   processing: false,
 
-  _exceptions: [],
-  addException: function(idx) {
+  _exceptions: {},
+
+  addException: function(idx, windowID) {
     idx = parseInt(idx, 10);
-    if (!Redirects._exceptions.includes(idx)) {
-      Redirects._exceptions.push(idx);
+
+    if (windowID in Redirects._exceptions) {
+      Redirects._exceptions[windowID].push(idx);
+    } else {
+      Redirects._exceptions[windowID] = [idx];
     }
   },
 
-  _formatRedirect: function(urlStr, to, match, idx) {
-    if (Redirects._exceptions.includes(idx)) { return null; }
+  _formatRedirect: function(urlStr, to, match, idx, windowID) {
+    if (Redirects._exceptions[windowID]?.includes(idx)) { return null; }
 
     let retval = to.url;
 
@@ -35,7 +38,7 @@ const Redirects = {
     };
   },
 
-  getRedirect: function(url) {
+  getRedirect: function(url, windowID) {
     if (url.startsWith('moz-extension://')) { return null; } // Internal page, no redirect from there
 
     for (let i = 0; i < Redirects._redirects.length; ++i) {
@@ -44,7 +47,7 @@ const Redirects = {
 
       const match = url.match(redirect.from);
       if (match != null) {
-        const formatted = Redirects._formatRedirect(url, redirect.to, match, i);
+        const formatted = Redirects._formatRedirect(url, redirect.to, match, i, windowID);
         if (formatted.url !== url) {
           return formatted;
         }
@@ -131,7 +134,7 @@ const Redirects = {
   generateRedirects: async function() {
     const currentTabID = await Redirects._activateProcessing();
 
-    Redirects._exceptions = [];
+    Redirects._exceptions = {};
     Redirects._redirects = [];
     const opts = await Redirects.getOptions();
     for (const redirect of opts.redirects) {
@@ -148,6 +151,7 @@ const Redirects = {
   init: async function() {
     await this._initOptions();
     await this.generateRedirects();
+
+    browser.windows.onRemoved.addListener(function(windowID) { delete Redirects._exceptions[windowID]; });
   },
 };
-function getRedirects() { return Redirects; }

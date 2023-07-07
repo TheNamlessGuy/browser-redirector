@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Redirector",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Redirects URLs accessed depending on a given regex",
   "author": "TheNamlessGuy",
   "homepage_url": "https://github.com/TheNamlessGuy/browser-redirector",
@@ -39,6 +39,7 @@
 
   "background": {
     "scripts": [
+      "src/communication.js",
       "src/redirects.js",
       "src/background.js"
     ]

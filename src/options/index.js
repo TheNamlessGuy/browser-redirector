@@ -1,7 +1,3 @@
-let BackgroundPage;
-let Redirects;
-let RedirectTypes;
-
 const Template = {
   init: function(template) {
     return template.content.firstElementChild.cloneNode(true)
@@ -120,7 +116,7 @@ const Redirect = {
   save: async function() {
     Errors.hide();
 
-    const opts = await Redirects.getOptions();
+    const opts = await BackgroundPage.getOptions();
     opts.redirects = [];
 
     const areaNames = [];
@@ -165,21 +161,58 @@ const Redirect = {
       }
     }
 
-    await Redirects.setOptions(opts);
-    await Redirects.generateRedirects();
+    await BackgroundPage.setOptions(opts);
+    await BackgroundPage.generateRedirects();
+  },
+};
+
+const BackgroundPage = {
+  _port: null,
+
+  init: function() {
+    BackgroundPage._port = browser.runtime.connect();
+  },
+
+  send: function(action, extras = {}) {
+    return new Promise((resolve) => {
+      const listener = (response) => {
+        if (response.response === action) {
+          BackgroundPage._port.onMessage.removeListener(listener);
+          resolve(response);
+        }
+      };
+
+      BackgroundPage._port.onMessage.addListener(listener);
+      BackgroundPage._port.postMessage({action: action, ...JSON.parse(JSON.stringify(extras))});
+    });
+  },
+
+  getOptions: async function() {
+    return (await BackgroundPage.send('get-options')).opts;
+  },
+
+  setOptions: async function(opts) {
+    await BackgroundPage.send('set-options', {opts: opts});
+  },
+
+  generateRedirects: async function() {
+    await BackgroundPage.send('generate-redirects');
+  },
+
+  getRedirectTypes: async function() {
+    return (await BackgroundPage.send('get-redirect-types')).types;
   },
 };
 
 window.addEventListener('DOMContentLoaded', async () => {
-  BackgroundPage = await browser.runtime.getBackgroundPage();
-  Redirects = await BackgroundPage.getRedirects();
+  BackgroundPage.init();
   RedirectTypes = await BackgroundPage.getRedirectTypes();
 
   Errors.init();
   Area.init();
   Redirect.init();
 
-  const opts = await Redirects.getOptions();
+  const opts = await BackgroundPage.getOptions();
   for (const redirect of opts.redirects) {
     Redirect.add(Area.get(redirect.area), redirect);
   }

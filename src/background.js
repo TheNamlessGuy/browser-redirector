@@ -2,14 +2,14 @@ const Background = {
   onTabUpdate: async function(tabID, changeInfo, tabInfo) {
     if (changeInfo.url == null) { return; }
 
-    const to = Redirects.getRedirect(changeInfo.url);
+    const to = Redirects.getRedirect(changeInfo.url, tabInfo.windowId);
     if (to != null) {
       browser.tabs.update(tabID, to);
     }
   },
 
   addException: async function(url, idx) {
-    Redirects.addException(idx);
+    Redirects.addException(idx, (await browser.windows.getCurrent()).id);
     await Background.moveCurrentTabTo(url);
   },
 
@@ -24,11 +24,11 @@ const Background = {
   },
 
   init: async function() {
+    await Communication.init();
     browser.tabs.onUpdated.addListener(Background.onTabUpdate);
     browser.tabs.onActivated.addListener(Background.onTabActivation);
     await Redirects.init();
   },
 };
-function getBackground() { return Background; }
 
 Background.init();

@@ -57,55 +57,6 @@ const Redirects = {
     return null;
   },
 
-  _defaultRedirects: [
-    {from: {url: '^(http|https)://(www\\.)?youtube\\.com/shorts/(.+)'}, to: {type: RedirectTypes.REGEX,     url: '{{1}}://{{2}}youtube.com/watch?v={{3}}'}, area: null, active: true},
-    {from: {url: '^(http|https)://(www\\.)?reddit\\.com'},              to: {type: RedirectTypes.INTERNAL,  url: '/src/helper-pages/hard-blocked.html'},    area: null, active: true},
-  ],
-  _initOptions: async function() {
-    const opts = await Redirects.getOptions();
-    let changed = false;
-    if (!('redirects' in opts)) {
-      opts.redirects = Redirects._defaultRedirects;
-      changed = true;
-    }
-
-    // Fix "redirects" if needed
-    for (let i = 0; i < opts.redirects.length; ++i) {
-      if ('internal' in opts.redirects[i].to) {
-        opts.redirects[i].to.type = opts.redirects[i].internal ? RedirectTypes.INTERNAL : RedirectTypes.REGEX;
-        delete opts.redirects[i].to.internal;
-        changed = true;
-      }
-
-      if (opts.redirects[i].to.type === RedirectTypes.INTERNAL && opts.redirects[i].to.url === '/src/helper-pages/blocked.html') {
-        opts.redirects[i].to.url = '/src/helper-pages/soft-blocked.html';
-        changed = true;
-      }
-
-      if (!('area' in opts.redirects[i])) {
-        opts.redirects[i].area = null;
-        changed = true;
-      }
-
-      if (!('active' in opts.redirects[i])) {
-        opts.redirects[i].active = true;
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      Redirects.setOptions(opts);
-    }
-  },
-
-  getOptions: async function() {
-    return await browser.storage.local.get();
-  },
-
-  setOptions: async function(opts) {
-    await browser.storage.local.set(opts);
-  },
-
   showProcessingIcon: async function(tabID, processing = null) {
     if (tabID == null) { return; }
     if (processing == null) { processing = Redirects.processing; }
@@ -136,7 +87,7 @@ const Redirects = {
 
     Redirects._exceptions = {};
     Redirects._redirects = [];
-    const opts = await Redirects.getOptions();
+    const opts = await Opts.get();
     for (const redirect of opts.redirects) {
       Redirects._redirects.push({
         from: new RegExp(redirect.from.url),
@@ -149,8 +100,7 @@ const Redirects = {
   },
 
   init: async function() {
-    await this._initOptions();
-    await this.generateRedirects();
+    await Redirects.generateRedirects();
 
     browser.windows.onRemoved.addListener(function(windowID) { delete Redirects._exceptions[windowID]; });
   },

@@ -3,7 +3,7 @@ A firefox plugin for general URL redirection using regexes.
 
 ## Get
 ### Download directly
-[Latest version available here](release/redirector-0.1.1.xpi)  
+[Latest version available here](release/redirector-0.2.0.xpi)  
 Just press the "Download" button, then drag and drop the .xpi file into your firefox browser.
 
 ### Download from addons.mozilla

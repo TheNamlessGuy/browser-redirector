@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Redirector",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Redirects URLs accessed depending on a given regex",
   "author": "TheNamlessGuy",
   "homepage_url": "https://github.com/TheNamlessGuy/browser-redirector",
@@ -21,6 +21,7 @@
   "permissions": [
     "<all_urls>",
     "activeTab",
+    "bookmarks",
     "storage",
     "unlimitedStorage"
   ],
@@ -41,12 +42,16 @@
     "scripts": [
       "src/communication.js",
       "src/redirects.js",
+
+      "src/options/bookmark.js",
+      "src/options/opts.js",
+
       "src/background.js"
     ]
   },
 
   "options_ui": {
-    "page": "src/options/index.html",
+    "page": "src/options/page/index.html",
     "browser_style": true
   },
 

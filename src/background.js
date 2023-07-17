@@ -24,6 +24,7 @@ const Background = {
   },
 
   init: async function() {
+    await Opts.init();
     await Communication.init();
     browser.tabs.onUpdated.addListener(Background.onTabUpdate);
     browser.tabs.onActivated.addListener(Background.onTabActivation);

@@ -118,6 +118,9 @@ const Redirect = {
 
     const opts = await BackgroundPage.getOptions();
     opts.redirects = [];
+    const extras = {
+      saveUsingBookmarkOverride: document.getElementById('general--save-using-bookmark').checked,
+    };
 
     const areaNames = [];
     const areas = document.getElementsByClassName('area');
@@ -161,7 +164,7 @@ const Redirect = {
       }
     }
 
-    await BackgroundPage.setOptions(opts);
+    await BackgroundPage.setOptions(opts, extras);
     await BackgroundPage.generateRedirects();
   },
 };
@@ -191,8 +194,8 @@ const BackgroundPage = {
     return (await BackgroundPage.send('get-options')).opts;
   },
 
-  setOptions: async function(opts) {
-    await BackgroundPage.send('set-options', {opts: opts});
+  setOptions: async function(opts, extras) {
+    await BackgroundPage.send('set-options', {opts, extras});
   },
 
   generateRedirects: async function() {
@@ -201,6 +204,10 @@ const BackgroundPage = {
 
   getRedirectTypes: async function() {
     return (await BackgroundPage.send('get-redirect-types')).types;
+  },
+
+  saveUsingBookmark: async function() {
+    return (await BackgroundPage.send('save-using-bookmark')).result;
   },
 };
 
@@ -211,6 +218,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   Errors.init();
   Area.init();
   Redirect.init();
+
+  document.getElementById('general--save-using-bookmark').checked = await BackgroundPage.saveUsingBookmark();
 
   const opts = await BackgroundPage.getOptions();
   for (const redirect of opts.redirects) {

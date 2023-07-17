@@ -15,11 +15,12 @@ const Communication = {
   },
 
   _map: {
-    'get-options': async function() { return {opts: await Redirects.getOptions()}; },
-    'set-options': async function(msg) { await Redirects.setOptions(msg.opts); },
+    'get-options': async function() { return {opts: await Opts.get()}; },
+    'set-options': async function(msg) { await Opts.set(msg.opts, msg.extras); },
     'generate-redirects': async function() { await Redirects.generateRedirects(); },
     'get-redirect-types': async function() { return {types: RedirectTypes}; },
     'move-current-tab-to': async function(msg) { await Background.moveCurrentTabTo(msg.url, msg.replaceState); },
     'add-exception': async function(msg) { await Background.addException(msg.url, msg.idx); },
+    'save-using-bookmark': async function() { return {result: BookmarkOpts._saveUsingBookmark}; },
   },
 };

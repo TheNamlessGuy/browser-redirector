@@ -11,7 +11,7 @@ const BookmarkOpts = {
     const url = `${id[0]}://${id[1]}`;
 
     if (opts == null) { return url; }
-    return `${url}?data=${JSON.stringify(opts)}`;
+    return `${url}?data=${encodeURIComponent(JSON.stringify(opts))}`;
   },
 
   _getDefaultLocation: async function(opts) {

@@ -19,13 +19,55 @@ const Redirects = {
     }
   },
 
-  _formatRedirect: function(urlStr, to, match, idx, windowID) {
+  _formatFunctions: {
+    lowercase: (x)    => x.toLowerCase(),
+    uppercase: (x)    => x.toUpperCase(),
+    trim:      (x, c) => Redirects._formatFunctions.ltrim(Redirects._formatFunctions.rtrim(x, c), c),
+    ltrim:     (x, c) => {
+      c = c ?? ' ';
+      let start = 0;
+      while (start < x.length && x[start] === c) { start += 1; }
+      return start > 0 ? x.substring(start) : x;
+    },
+    rtrim:     (x, c) => {
+      c = c ?? ' ';
+      let end = x.length;
+      while (end > start && x[end - 1] === c) { end -= 1; }
+      return end < x.length ? x.substring(0, end) : x;
+    },
+  },
+
+  _formatRedirect: function(urlStr, to, matches, idx, windowID) {
     if (Redirects._exceptions[windowID]?.includes(idx)) { return null; }
 
     let retval = to.url;
 
-    for (let i = 1; i < match.length; ++i) {
-      retval = retval.replaceAll(`{{${i}}}`, match[i] == null ? '' : match[i]);
+    for (let i = 1; i < matches.length; ++i) {
+      while (true) {
+        const start = retval.indexOf(`{{${i}`);
+        if (start === -1) { break; }
+
+        const end = retval.substring(start).indexOf('}}') + start + 2;
+        const match = retval.substring(start, end);
+        const split = match.substring(2, match.length - 2).split(':');
+        let result = matches[i] == null ? '' : matches[i];
+
+        for (let j = 1; j < split.length; ++j) {
+          let params = [result];
+
+          const paramStart = split[j].indexOf('(');
+          if (paramStart !== -1) {
+            params = params.concat(split[j].substring(paramStart + 1, split[j].length - 1).split(',').map(x => x.trim()));
+            split[j] = split[j].substring(0, paramStart);
+          }
+
+          if (split[j] in Redirects._formatFunctions) {
+            result = Redirects._formatFunctions[split[j]](...params);
+          }
+        }
+
+        retval = retval.replaceAll(match, result);
+      }
     }
 
     if (to.type === RedirectTypes.INTERNAL) {

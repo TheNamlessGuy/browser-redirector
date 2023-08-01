@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Redirector",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Redirects URLs accessed depending on a given regex",
   "author": "TheNamlessGuy",
   "homepage_url": "https://github.com/TheNamlessGuy/browser-redirector",

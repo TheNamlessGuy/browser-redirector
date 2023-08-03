@@ -74,6 +74,10 @@ const Redirects = {
       retval += `?url=${urlStr}&idx=${idx}`;
     }
 
+    if (retval === urlStr) {
+      return null; // Don't redirect to the same page
+    }
+
     return {
       url: retval,
       loadReplace: true,

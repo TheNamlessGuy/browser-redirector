@@ -1,5 +1,5 @@
 # browser-redirector
-A firefox plugin for general URL redirection using regexes.
+A firefox plugin for general URL redirection using regexes. Manual and automatic!
 
 ## Get
 ### Manual download

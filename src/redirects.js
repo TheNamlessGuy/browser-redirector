@@ -4,7 +4,10 @@ const RedirectTypes = {
 };
 
 const Redirects = {
-  _redirects: [],
+  _redirects: {
+    automatic: [],
+    manual: [],
+  },
   processing: false,
 
   _exceptions: {},
@@ -84,11 +87,11 @@ const Redirects = {
     };
   },
 
-  getRedirect: function(url, windowID) {
+  getAutomaticRedirect: function(url, windowID) {
     if (url.startsWith('moz-extension://')) { return null; } // Internal page, no redirect from there
 
-    for (let i = 0; i < Redirects._redirects.length; ++i) {
-      const redirect = Redirects._redirects[i];
+    for (let i = 0; i < Redirects._redirects.automatic.length; ++i) {
+      const redirect = Redirects._redirects.automatic[i];
       if (!redirect.active) { continue; }
 
       const match = url.match(redirect.from);
@@ -101,6 +104,43 @@ const Redirects = {
     }
 
     return null;
+  },
+
+  getManualRedirect: function(url) {
+    if (url.startsWith('moz-extension://')) { return null; } // Internal page, no redirect from there
+
+    for (let i = 0; i < Redirects._redirects.manual.length; ++i) {
+      const redirect = Redirects._redirects.manual[i];
+      if (!redirect.active) { continue; }
+
+      const match = redirect.urls.find(x => url.match(x.from));
+      if (match != null) {
+        return redirect;
+      }
+    }
+
+    return null;
+  },
+
+  getManualRedirectOptionsForCurrentTab: async function() {
+    const tab = (await browser.tabs.query({active: true, currentWindow: true}))[0];
+    return Redirects.getManualRedirect(tab.url).urls.filter(x => tab.url.match(x.from) == null);
+  },
+
+  doManualRedirectOnCurrentTabTo: async function(_to) {
+    const tab = (await browser.tabs.query({active: true, currentWindow: true}))[0];
+    const redirect = Redirects.getManualRedirect(tab.url);
+
+    const from = redirect.urls.find(x => tab.url.match(x.from));
+    const to = redirect.urls.find(x => x.to === _to);
+
+    let newURL = to.to;
+    const match = tab.url.match(from.from);
+    for (let i = 1; i < match.length; ++i) {
+      newURL = newURL.replaceAll(`{{${i}}}`, match[i] ?? '');
+    }
+
+    await browser.tabs.update(tab.id, {url: newURL});
   },
 
   showProcessingIcon: async function(tabID, processing = null) {
@@ -132,14 +172,32 @@ const Redirects = {
     const currentTabID = await Redirects._activateProcessing();
 
     Redirects._exceptions = {};
-    Redirects._redirects = [];
+    Redirects._redirects.automatic = [];
+    Redirects._redirects.manual = [];
     const opts = await Opts.get();
     for (const redirect of opts.redirects) {
-      Redirects._redirects.push({
-        from: new RegExp(redirect.from.url),
-        to: JSON.parse(JSON.stringify(redirect.to)),
-        active: redirect.active,
-      });
+      if (redirect.type === 'automatic') {
+        Redirects._redirects.automatic.push({
+          from: new RegExp(redirect.from.url),
+          to: JSON.parse(JSON.stringify(redirect.to)),
+          active: redirect.active,
+        });
+      } else if (redirect.type === 'manual') {
+        const data = {
+          urls: [],
+          active: redirect.active,
+        };
+
+        for (const url of redirect.urls) {
+          data.urls.push({
+            from: new RegExp(url.from),
+            to: url.to,
+            alias: url.alias,
+          });
+        }
+
+        Redirects._redirects.manual.push(data);
+      }
     }
 
     await Redirects._deactivateProcessing(currentTabID);

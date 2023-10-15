@@ -1,6 +1,9 @@
 const Opts = {
   _default: {
     redirects: [{
+      area: null,
+      active: true,
+      type: 'automatic',
       from: {
         url: '^(http|https)://(www\\.)?youtube\\.com/shorts/(.+)',
       },
@@ -8,9 +11,10 @@ const Opts = {
         type: RedirectTypes.REGEX,
         url: '{{1}}://{{2}}youtube.com/watch?v={{3}}',
       },
+    }, {
       area: null,
       active: true,
-    }, {
+      type: 'automatic',
       from: {
         url: '^(http|https)://(www\\.)?reddit\\.com',
       },
@@ -18,8 +22,6 @@ const Opts = {
         type: RedirectTypes.INTERNAL,
         url: '/src/helper-pages/hard-blocked.html',
       },
-      area: null,
-      active: true,
     }],
   },
 
@@ -28,14 +30,8 @@ const Opts = {
 
     // Fix "redirects" if needed
     for (let i = 0; i < opts.redirects.length; ++i) {
-      if ('internal' in opts.redirects[i].to) {
-        opts.redirects[i].to.type = opts.redirects[i].internal ? RedirectTypes.INTERNAL : RedirectTypes.REGEX;
-        delete opts.redirects[i].to.internal;
-        changed = true;
-      }
-
-      if (opts.redirects[i].to.type === RedirectTypes.INTERNAL && opts.redirects[i].to.url === '/src/helper-pages/blocked.html') {
-        opts.redirects[i].to.url = '/src/helper-pages/soft-blocked.html';
+      if (!('type' in opts.redirects[i])) {
+        opts.redirects[i].type = 'automatic';
         changed = true;
       }
 
@@ -47,6 +43,19 @@ const Opts = {
       if (!('active' in opts.redirects[i])) {
         opts.redirects[i].active = true;
         changed = true;
+      }
+
+      if (opts.redirects[i].type === 'automatic') {
+        if ('internal' in opts.redirects[i].to) {
+          opts.redirects[i].to.type = opts.redirects[i].internal ? RedirectTypes.INTERNAL : RedirectTypes.REGEX;
+          delete opts.redirects[i].to.internal;
+          changed = true;
+        }
+
+        if (opts.redirects[i].to.type === RedirectTypes.INTERNAL && opts.redirects[i].to.url === '/src/helper-pages/blocked.html') {
+          opts.redirects[i].to.url = '/src/helper-pages/soft-blocked.html';
+          changed = true;
+        }
       }
     }
 

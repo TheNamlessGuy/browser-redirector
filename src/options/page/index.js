@@ -1,9 +1,3 @@
-const Template = {
-  init: function(template) {
-    return template.content.firstElementChild.cloneNode(true)
-  },
-};
-
 const Errors = {
   element: null,
 
@@ -24,34 +18,17 @@ const Errors = {
 
 const Area = {
   container: null,
-  template: null,
 
   init: function() {
-    Area.template = document.getElementById('template-area');
     Area.container = document.getElementById('area-container');
   },
 
   add: function(name) {
-    const area = Template.init(Area.template);
-
-    const title = area.getElementsByClassName('area-title')[0];
-    title.innerText = (name == null || name === '' ? 'No area name' : `Area: ${name}`);
-    title.addEventListener('click', () => {
-      area.getElementsByClassName('content')[0].classList.toggle('hidden');
-      area.getElementsByClassName('content-hidden')[0].classList.toggle('hidden');
-    });
-
-    const nameInput = area.getElementsByClassName('area-name')[0];
-    nameInput.value = name;
-    nameInput.addEventListener('input', () => {
-      title.innerText = (nameInput.value == null || nameInput.value === '' ? 'No area name' : `Area: ${nameInput.value}`);
-    });
-
-    area.getElementsByClassName('remove-btn')[0].addEventListener('click', () => Area.remove(area));
-    area.getElementsByClassName('add-redirect-btn')[0].addEventListener('click', () => Redirect.add(area));
+    const area = document.createElement('redirection-area');
+    area.name = name;
+    area.addEventListener('remove-me', () => Area.remove(area));
 
     Area.container.appendChild(area);
-
     Area._areas.push({name: name, element: area});
     return area;
   },
@@ -69,104 +46,13 @@ const Area = {
 
   remove: function(area) {
     const idx = Area._areas.findIndex((x) => x.element === area);
-    Area._areas[idx].element.remove();
     Area._areas.splice(idx, 1);
-  },
-};
-
-const Redirect = {
-  template: null,
-
-  init: function() {
-    Redirect.template = document.getElementById('template-redirect');
+    area.remove();
   },
 
-  add: function(area, data = {}) {
-    const redirect = Template.init(Redirect.template);
-
-    redirect.getElementsByClassName('from-input')[0].value = data.from?.url ?? null;
-
-    const type = redirect.getElementsByClassName('type')[0];
-    type.value = data.to?.type ?? RedirectTypes.REGEX;
-    Redirect._showType(redirect, type.value);
-    type.addEventListener('change', () => Redirect._showType(redirect, type.value));
-    if (type.value === RedirectTypes.REGEX) {
-      redirect.getElementsByClassName('type-regex-input')[0].value = data.to?.url ?? null;
-    } else if (type.value === RedirectTypes.INTERNAL) {
-      redirect.getElementsByClassName('type-internal-select')[0].value = data.to?.url ?? null;
-    }
-
-    const activeContainer = redirect.getElementsByClassName('active-container')[0];
-    const active = activeContainer.getElementsByClassName('active')[0];
-    active.checked = data.active ?? true;
-    activeContainer.addEventListener('click', () => active.checked = !active.checked);
-    active.addEventListener('click', () => active.checked = !active.checked);
-
-    redirect.getElementsByClassName('remove-btn')[0].addEventListener('click', () => redirect.parentNode.removeChild(redirect));
-
-    area.getElementsByClassName('redirect-container')[0].appendChild(redirect);
-    return redirect;
-  },
-
-  _showType: function(redirect, type) {
-    Array.from(redirect.querySelectorAll('[class*=type--]')).forEach((x) => x.classList.add('hidden'));
-    redirect.getElementsByClassName(`type--${type}`)[0].classList.remove('hidden');
-  },
-
-  save: async function() {
-    Errors.hide();
-
-    const opts = await BackgroundPage.getOptions();
-    opts.redirects = [];
-    const extras = {
-      saveUsingBookmarkOverride: document.getElementById('general--save-using-bookmark').checked,
-    };
-
-    const areaNames = [];
-    const areas = document.getElementsByClassName('area');
-    for (const area of areas) {
-      let areaName = area.getElementsByClassName('area-name')[0].value;
-      if (areaName === '') { areaName = null; }
-      if (areaNames.includes(areaName)) {
-        Errors.show(`Cannot have two areas with the same name. Hint: duplicate name is '${areaName ?? ''}'`);
-        return;
-      }
-      areaNames.push(areaName);
-
-      const redirects = area.getElementsByClassName('redirect');
-
-      for (const redirect of redirects) {
-        const data = {
-          area: areaName,
-          active: redirect.getElementsByClassName('active')[0].checked,
-          from: {url: redirect.getElementsByClassName('from-input')[0].value},
-          to: {
-            type: redirect.getElementsByClassName('type')[0].value,
-            url: null,
-          },
-        };
-
-        if (data.to.type === RedirectTypes.REGEX) {
-          data.to.url = redirect.getElementsByClassName('type-regex-input')[0].value;
-        } else if (data.to.type === RedirectTypes.INTERNAL) {
-          data.to.url = redirect.getElementsByClassName('type-internal-select')[0].value;
-        }
-
-        if (data.from.url.length === 0) {
-          Errors.show(`The 'from' field cannot be empty. Hint: area name is '${areaName ?? ''}'`);
-          return;
-        } else if (data.to.url.length === 0) {
-          Errors.show(`The 'to' field cannot be empty. Hint: area name is '${areaName ?? ''}'`);
-          return;
-        }
-
-        opts.redirects.push(data);
-      }
-    }
-
-    await BackgroundPage.setOptions(opts, extras);
-    await BackgroundPage.generateRedirects();
-  },
+  all: function() {
+    return this._areas.slice();
+  }
 };
 
 const BackgroundPage = {
@@ -202,30 +88,67 @@ const BackgroundPage = {
     await BackgroundPage.send('generate-redirects');
   },
 
-  getRedirectTypes: async function() {
-    return (await BackgroundPage.send('get-redirect-types')).types;
-  },
-
   saveUsingBookmark: async function() {
     return (await BackgroundPage.send('save-using-bookmark')).result;
   },
 };
 
+async function save() {
+  Errors.hide();
+
+  const opts = await BackgroundPage.getOptions();
+  opts.redirects = [];
+  const extras = {
+    saveUsingBookmarkOverride: document.getElementById('general--save-using-bookmark').checked,
+  };
+
+  const areas = Area.all();
+  const names = [];
+  for (const area of areas) {
+    const name = area.name;
+    if (names.includes(name)) {
+      Errors.show(`Cannot have two areas with the same name. Hint: duplicate name is '${name ?? ''}'`);
+      return;
+    }
+    names.push(name);
+
+    for (const redirect of area.element.redirects) {
+      const data = {
+        area: name,
+        active: redirect.active,
+        type: redirect.type,
+      };
+
+      if (data.type === 'automatic') {
+        data.from = {url: redirect.fromURL};
+        data.to = {
+          type: redirect.toType,
+          url: redirect.toURL,
+        };
+      } else if (data.type === 'manual') {
+        data.urls = redirect.manualURLs;
+      }
+
+      opts.redirects.push(data);
+    }
+  }
+
+  await BackgroundPage.setOptions(opts, extras);
+  await BackgroundPage.generateRedirects();
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
   BackgroundPage.init();
-  RedirectTypes = await BackgroundPage.getRedirectTypes();
-
   Errors.init();
   Area.init();
-  Redirect.init();
 
   document.getElementById('general--save-using-bookmark').checked = await BackgroundPage.saveUsingBookmark();
 
   const opts = await BackgroundPage.getOptions();
   for (const redirect of opts.redirects) {
-    Redirect.add(Area.get(redirect.area), redirect);
+    Area.get(redirect.area).addRedirect(redirect);
   }
 
-  document.getElementById('save-btn').addEventListener('click', Redirect.save);
+  document.getElementById('save-btn').addEventListener('click', save);
   document.getElementById('add-new-area-btn').addEventListener('click', () => Area.add(null));
 });

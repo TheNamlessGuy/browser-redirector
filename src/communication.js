@@ -22,5 +22,8 @@ const Communication = {
     'move-current-tab-to': async function(msg) { await Background.moveCurrentTabTo(msg.url, msg.replaceState); },
     'add-exception': async function(msg) { await Background.addException(msg.url, msg.idx); },
     'save-using-bookmark': async function() { return {result: BookmarkOpts._saveUsingBookmark}; },
+
+    'get-manual-options': async function() { return {result: await Redirects.getManualRedirectOptionsForCurrentTab()}; },
+    'move-to-manual-option': async function(msg) { await Redirects.doManualRedirectOnCurrentTabTo(msg.to); },
   },
 };

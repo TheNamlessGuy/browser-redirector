@@ -1,12 +1,20 @@
 class RedirectElement extends HTMLElement {
   _active = null;
+  _alias = null;
   _remove = null;
   _type = null;
 
-  _manual = {
+  _manualSwap = {
     container: null,
     urls: [],
   };
+
+  _manualOneWay = {
+    container: null,
+    from: null,
+    to: null,
+    toAlias: null,
+  }
 
   _automatic = {
     container: null,
@@ -49,6 +57,11 @@ div.root {
     this._remove.addEventListener('click', () => this.remove());
     container.append(this._remove);
 
+    this._alias = document.createElement('labeled-input');
+    this._alias.label = 'Alias';
+    this._alias.placeholder = 'Alias';
+    container.append(this._alias);
+
     this._active = document.createElement('labeled-checkbox');
     this._active.style.marginBottom = '5px';
     this._active.label = 'Active';
@@ -59,26 +72,48 @@ div.root {
     this._type.grown = false;
     this._type.style.marginBottom = '5px';
     this._type.label = 'Type';
-    this._type.options = [{value: 'automatic', display: 'Automatic'}, {value: 'manual', display: 'Manual'}];
+    this._type.options = [{value: 'automatic', display: 'Automatic'}, {value: 'manual-swap', display: 'Manually swap between multiple URLs'}, {value: 'manual-oneway', display: 'Manually swap in one direction'}];
     this._type.addEventListener('change', () => this._setMode());
     container.append(this._type);
 
-    this._initManual(container);
+    this._initManualOneWay(container);
+    this._initManualSwap(container);
     this._initAutomatic(container);
     this._setMode();
 
     this.attachShadow({mode: 'closed'}).append(style, container);
   }
 
-  _initManual(container) {
-    this._manual.container = document.createElement('div');
+  _initManualOneWay(container) {
+    this._manualOneWay.container = document.createElement('div');
+
+    this._manualOneWay.from = document.createElement('labeled-input');
+    this._manualOneWay.from.label = 'From';
+    this._manualOneWay.from.placeholder = 'Regex...';
+    this._manualOneWay.container.append(this._manualOneWay.from);
+
+    this._manualOneWay.to = document.createElement('labeled-input');
+    this._manualOneWay.to.label = 'To';
+    this._manualOneWay.to.placeholder = 'Result URL';
+    this._manualOneWay.container.append(this._manualOneWay.to);
+
+    this._manualOneWay.toAlias = document.createElement('labeled-input');
+    this._manualOneWay.toAlias.label = 'To alias';
+    this._manualOneWay.toAlias.placeholder = 'Alias';
+    this._manualOneWay.container.append(this._manualOneWay.toAlias);
+
+    container.append(this._manualOneWay.container);
+  }
+
+  _initManualSwap(container) {
+    this._manualSwap.container = document.createElement('div');
 
     const addURLOptionButton = document.createElement('button');
     addURLOptionButton.innerText = 'Add URL Option';
     addURLOptionButton.addEventListener('click', () => this._addURLOption());
-    this._manual.container.append(addURLOptionButton);
+    this._manualSwap.container.append(addURLOptionButton);
 
-    container.append(this._manual.container);
+    container.append(this._manualSwap.container);
   }
 
   _initAutomatic(container) {
@@ -125,16 +160,18 @@ div.root {
   }
 
   _setMode() {
-    this._automatic.container.classList.toggle('hidden', this._type.value !== 'automatic');
-    this._manual.container.classList.toggle('hidden', this._type.value !== 'manual');
+    this._automatic.container.classList.toggle('hidden', this.type !== 'automatic');
+    this._manualSwap.container.classList.toggle('hidden', this.type !== 'manual-swap');
+    this._manualOneWay.container.classList.toggle('hidden', this.type !== 'manual-oneway');
   }
 
   init(data = {}) {
+    this._alias.value = data?.alias ?? '';
     this._active.checked = data?.active ?? true;
     this._type.value = data?.type ?? 'automatic';
     this._setMode();
 
-    if (this._type.value === 'automatic') {
+    if (this.type === 'automatic') {
       this._automatic.from.value = data?.from?.url ?? '';
       this._automatic.type.select.value = data?.to?.type ?? 'regex';
       this._automatic_swapType();
@@ -144,7 +181,7 @@ div.root {
       } else if (this._automatic.type.select.value === 'internal') {
         this._automatic.type.internal.value = data?.to?.url ?? '/src/helper-pages/hard-blocked.html';
       }
-    } else if (this._type.value === 'manual') {
+    } else if (this.type === 'manual-swap') {
       for (const url of data?.urls ?? []) {
         this._addURLOption(url);
       }
@@ -152,6 +189,10 @@ div.root {
       if ((data?.urls ?? []).length === 0) {
         this._addURLOption();
       }
+    } else if (this.type === 'manual-oneway') {
+      this._manualOneWay.from.value = data?.from?.url ?? '';
+      this._manualOneWay.to.value = data?.to?.url ?? '';
+      this._manualOneWay.toAlias.value = data?.toAlias ?? '';
     }
   }
 
@@ -182,14 +223,18 @@ div.root {
     const remove = document.createElement('button');
     remove.innerText = 'Remove URL Option';
     remove.addEventListener('click', () => {
-      const idx = this._manual.urls.findIndex(x => x.container === container);
-      this._manual.urls.splice(idx, 1);
+      const idx = this._manualSwap.urls.findIndex(x => x.container === container);
+      this._manualSwap.urls.splice(idx, 1);
       container.remove();
     });
     container.append(remove);
 
-    this._manual.container.append(container);
-    this._manual.urls.push({container, alias, from, to});
+    this._manualSwap.container.append(container);
+    this._manualSwap.urls.push({container, alias, from, to});
+  }
+
+  get alias() {
+    return this._alias.value;
   }
 
   get active() {
@@ -201,7 +246,13 @@ div.root {
   }
 
   get fromURL() {
-    return this._automatic.from.value;
+    if (this.type === 'automatic') {
+      return this._automatic.from.value;
+    } else if (this.type === 'manual-oneway') {
+      return this._manualOneWay.from.value;
+    }
+
+    return null;
   }
 
   get toType() {
@@ -209,15 +260,23 @@ div.root {
   }
 
   get toURL() {
-    if (this.toType === 'regex') {
-      return this._automatic.type.regex.value;
-    } else if (this.toType === 'internal') {
-      return this._automatic.type.internal.value;
+    if (this.type === 'automatic') {
+      if (this.toType === 'regex') {
+        return this._automatic.type.regex.value;
+      } else if (this.toType === 'internal') {
+        return this._automatic.type.internal.value;
+      }
+    } else if (this.type === 'manual-oneway') {
+      return this._manualOneWay.to.value;
     }
   }
 
+  get toAlias() {
+    return this._manualOneWay.toAlias.value;
+  }
+
   get manualURLs() {
-    return this._manual.urls.map(x => {
+    return this._manualSwap.urls.map(x => {
       return {
         alias: x.alias.value,
         from: x.from.value,

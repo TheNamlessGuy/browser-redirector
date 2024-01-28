@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Redirector",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Redirects URLs accessed depending on a given regex",
   "author": "TheNamlessGuy",
   "homepage_url": "https://github.com/TheNamlessGuy/browser-redirector",
@@ -28,6 +28,17 @@
 
   "page_action": {
     "browser_style": true,
+    "default_icon": {
+      "16": "res/icons/processing/16.gif",
+      "19": "res/icons/processing/19.gif",
+      "32": "res/icons/processing/32.gif",
+      "38": "res/icons/processing/38.gif",
+      "48": "res/icons/processing/48.gif"
+    },
+    "default_title": "Redirector processing"
+  },
+
+  "browser_action": {
     "default_icon": {
       "16": "res/icons/processing/16.gif",
       "19": "res/icons/processing/19.gif",

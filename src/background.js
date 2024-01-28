@@ -22,22 +22,36 @@ const Background = {
   },
 
   onTabActivation: async function(activeInfo) {
-    Redirects.showProcessingIcon(activeInfo.previousTabId, false);
-    Redirects.showProcessingIcon(activeInfo.tabId);
-
     const tab = await browser.tabs.get(activeInfo.tabId);
+    await Background._showManualRedirect(tab.url, tab.id);
+  },
+
+  toggleManualRedirectForCurrentTab: async function() {
+    const tab = (await browser.tabs.query({currentWindow: true, active: true}))[0];
     await Background._showManualRedirect(tab.url, tab.id);
   },
 
   _showManualRedirect: async function(url, tabID) {
     if (Redirects.processing) { return; }
 
-    const redirect = Redirects.getManualRedirect(url);
     const isShown = await browser.pageAction.isShown({tabId: tabID});
-    if (redirect == null && isShown) {
-      await browser.pageAction.hide(tabID);
-    } else if (redirect != null && !isShown) {
+    let shouldShow = false;
+
+    let redirect = Redirects.getManualSwapRedirect(url);
+    if (redirect != null) {
       await browser.pageAction.setTitle({tabId: tabID, title: 'Redirect to...'});
+      shouldShow = true;
+    }
+
+    redirect = Redirects.getManualOneWayRedirect(url);
+    if (redirect != null) {
+      await browser.pageAction.setTitle({tabId: tabID, title: `Redirect to '${redirect.toAlias}'`});
+      shouldShow = true;
+    }
+
+    if (isShown && !shouldShow) {
+      await browser.pageAction.hide(tabID);
+    } else if (!isShown && shouldShow) {
       await browser.pageAction.setIcon({
         tabId: tabID,
         path: {
@@ -55,9 +69,17 @@ const Background = {
   onPageActionClicked: async function(tab, info) {
     if (Redirects.processing) { return; }
 
-    browser.pageAction.setPopup({tabId: tab.id, popup: '/src/popup/index.html'});
+    browser.pageAction.setPopup({tabId: tab.id, popup: '/src/popup/pageaction/index.html'});
     browser.pageAction.openPopup();
     browser.pageAction.setPopup({tabId: tab.id, popup: ''});
+  },
+
+  onBrowserActionClicked: async function(tab, info) {
+    if (Redirects.processing) { return; }
+
+    browser.browserAction.setPopup({tabId: tab.id, popup: '/src/popup/browseraction/index.html'});
+    browser.browserAction.openPopup();
+    browser.browserAction.setPopup({tabId: tab.id, popup: ''});
   },
 
   init: async function() {
@@ -66,6 +88,7 @@ const Background = {
     browser.tabs.onUpdated.addListener(Background.onTabUpdate);
     browser.tabs.onActivated.addListener(Background.onTabActivation);
     browser.pageAction.onClicked.addListener(Background.onPageActionClicked);
+    browser.browserAction.onClicked.addListener(Background.onBrowserActionClicked);
     await Redirects.init();
   },
 };

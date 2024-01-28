@@ -1,5 +1,6 @@
 const Opts = {
   _default: {
+    _v: null,
     redirects: [{
       area: null,
       active: true,
@@ -25,38 +26,56 @@ const Opts = {
     }],
   },
 
+  _v: () => browser.runtime.getManifest().version,
+
   init: async function() {
+    Opts._default._v = Opts._v();
     let {opts, changed} = await BookmarkOpts.init(Opts._default);
 
-    // Fix "redirects" if needed
-    for (let i = 0; i < opts.redirects.length; ++i) {
-      if (!('type' in opts.redirects[i])) {
-        opts.redirects[i].type = 'automatic';
-        changed = true;
-      }
+    const currentVersion = Opts._v();
+    const optsVersion = opts._v ?? '0.0.0';
 
-      if (!('area' in opts.redirects[i])) {
-        opts.redirects[i].area = null;
-        changed = true;
-      }
+    if (currentVersion > optsVersion) {
+      if (optsVersion < '0.4.0') {
+        // Fix "redirects" if needed
+        for (let i = 0; i < opts.redirects.length; ++i) {
+          if (!('type' in opts.redirects[i])) {
+            opts.redirects[i].type = 'automatic';
+          }
 
-      if (!('active' in opts.redirects[i])) {
-        opts.redirects[i].active = true;
-        changed = true;
-      }
+          if (!('area' in opts.redirects[i])) {
+            opts.redirects[i].area = null;
+          }
 
-      if (opts.redirects[i].type === 'automatic') {
-        if ('internal' in opts.redirects[i].to) {
-          opts.redirects[i].to.type = opts.redirects[i].internal ? RedirectTypes.INTERNAL : RedirectTypes.REGEX;
-          delete opts.redirects[i].to.internal;
-          changed = true;
+          if (!('active' in opts.redirects[i])) {
+            opts.redirects[i].active = true;
+          }
+
+          if (opts.redirects[i].type === 'automatic') {
+            if ('internal' in opts.redirects[i].to) {
+              opts.redirects[i].to.type = opts.redirects[i].internal ? RedirectTypes.INTERNAL : RedirectTypes.REGEX;
+              delete opts.redirects[i].to.internal;
+            }
+
+            if (opts.redirects[i].to.type === RedirectTypes.INTERNAL && opts.redirects[i].to.url === '/src/helper-pages/blocked.html') {
+              opts.redirects[i].to.url = '/src/helper-pages/soft-blocked.html';
+            }
+          }
         }
+      }
 
-        if (opts.redirects[i].to.type === RedirectTypes.INTERNAL && opts.redirects[i].to.url === '/src/helper-pages/blocked.html') {
-          opts.redirects[i].to.url = '/src/helper-pages/soft-blocked.html';
-          changed = true;
+      if (optsVersion < '0.5.0') {
+        for (let i = 0; i < opts.redirects.length; ++i) {
+          if (opts.redirects[i].type === 'manual') {
+            opts.redirects[i].type = 'manual-swap';
+          }
+
+          opts.redirects[i].alias = `${i + 1}`;
         }
       }
+
+      opts._v = currentVersion;
+      changed = true;
     }
 
     if (changed) {

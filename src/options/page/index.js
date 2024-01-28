@@ -29,7 +29,7 @@ const Area = {
     area.addEventListener('remove-me', () => Area.remove(area));
 
     Area.container.appendChild(area);
-    Area._areas.push({name: name, element: area});
+    Area._areas.push(area);
     return area;
   },
 
@@ -37,7 +37,7 @@ const Area = {
   get: function(name) {
     for (const area of Area._areas) {
       if (area.name === name) {
-        return area.element;
+        return area;
       }
     }
 
@@ -45,7 +45,7 @@ const Area = {
   },
 
   remove: function(area) {
-    const idx = Area._areas.findIndex((x) => x.element === area);
+    const idx = Area._areas.findIndex((x) => x === area);
     Area._areas.splice(idx, 1);
     area.remove();
   },
@@ -112,11 +112,12 @@ async function save() {
     }
     names.push(name);
 
-    for (const redirect of area.element.redirects) {
+    for (const redirect of area.redirects) {
       const data = {
         area: name,
         active: redirect.active,
         type: redirect.type,
+        alias: redirect.alias,
       };
 
       if (data.type === 'automatic') {
@@ -125,8 +126,12 @@ async function save() {
           type: redirect.toType,
           url: redirect.toURL,
         };
-      } else if (data.type === 'manual') {
+      } else if (data.type === 'manual-swap') {
         data.urls = redirect.manualURLs;
+      } else if (data.type === 'manual-oneway') {
+        data.from = {url: redirect.fromURL};
+        data.to = {url: redirect.toURL};
+        data.toAlias = redirect.toAlias;
       }
 
       opts.redirects.push(data);

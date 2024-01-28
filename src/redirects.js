@@ -6,7 +6,8 @@ const RedirectTypes = {
 const Redirects = {
   _redirects: {
     automatic: [],
-    manual: [],
+    manualSwap: [],
+    manualOneWay: [],
   },
   processing: false,
 
@@ -106,12 +107,28 @@ const Redirects = {
     return null;
   },
 
-  getManualRedirect: function(url) {
+  getManualOneWayRedirect: function(url) {
     if (url.startsWith('moz-extension://')) { return null; } // Internal page, no redirect from there
 
-    for (let i = 0; i < Redirects._redirects.manual.length; ++i) {
-      const redirect = Redirects._redirects.manual[i];
+    for (let i = 0; i < Redirects._redirects.manualOneWay.length; ++i) {
+      const redirect = Redirects._redirects.manualOneWay[i];
       if (!redirect.active) { continue; }
+
+      if (url.match(redirect.from)) {
+        return redirect;
+      }
+    }
+
+    return null;
+  },
+
+  getManualSwapRedirect: function(url) {
+    if (url.startsWith('moz-extension://')) { return null; } // Internal page, no redirect from there
+
+    for (let i = 0; i < Redirects._redirects.manualSwap.length; ++i) {
+      const redirect = Redirects._redirects.manualSwap[i];
+      if (!redirect.active) { continue; }
+      if (redirect.urls.length === 1) { continue; } // What's the point?
 
       const match = redirect.urls.find(x => url.match(x.from));
       if (match != null) {
@@ -122,14 +139,23 @@ const Redirects = {
     return null;
   },
 
-  getManualRedirectOptionsForCurrentTab: async function() {
+  getManualSwapRedirectOptionsForCurrentTab: async function() {
     const tab = (await browser.tabs.query({active: true, currentWindow: true}))[0];
-    return Redirects.getManualRedirect(tab.url).urls.filter(x => tab.url.match(x.from) == null);
+    const redirect = Redirects.getManualSwapRedirect(tab.url);
+    return {
+      currentAlias: redirect?.urls.filter(x => tab.url.match(x.from) != null)[0].alias ?? '',
+      options: redirect?.urls.filter(x => tab.url.match(x.from) == null) ?? [],
+    };
   },
 
-  doManualRedirectOnCurrentTabTo: async function(_to) {
+  getManualOneWayRedirectForCurrentTab: async function() {
     const tab = (await browser.tabs.query({active: true, currentWindow: true}))[0];
-    const redirect = Redirects.getManualRedirect(tab.url);
+    return Redirects.getManualOneWayRedirect(tab.url);
+  },
+
+  doManualSwapRedirectOnCurrentTabTo: async function(_to) {
+    const tab = (await browser.tabs.query({active: true, currentWindow: true}))[0];
+    const redirect = Redirects.getManualSwapRedirect(tab.url);
 
     const from = redirect.urls.find(x => tab.url.match(x.from));
     const to = redirect.urls.find(x => x.to === _to);
@@ -141,6 +167,14 @@ const Redirects = {
     }
 
     await browser.tabs.update(tab.id, {url: newURL});
+  },
+
+  doManualOneWayRedirectOnCurrentTab: async function() {
+    const tab = (await browser.tabs.query({active: true, currentWindow: true}))[0];
+    const redirect = Redirects.getManualOneWayRedirect(tab.url);
+
+    const newURL = Redirects._formatRedirect(tab.url, {url: redirect.to}, tab.url.match(redirect.from), -1, -1).url;
+    await browser.tabs.update(tab.id, {url: newURL, loadReplace: false});
   },
 
   showProcessingIcon: async function(tabID, processing = null) {
@@ -156,24 +190,39 @@ const Redirects = {
 
   _activateProcessing: async function() {
     Redirects.processing = true;
-    const currentTabID = (await browser.tabs.query({active: true}))?.id;
-    await Redirects.showProcessingIcon(currentTabID);
-    return currentTabID;
+    await browser.browserAction.setTitle({title: 'Redirector processing'});
+    await browser.browserAction.setIcon({
+      path: {
+        16: '/res/icons/processing/16.gif',
+        19: '/res/icons/processing/19.gif',
+        32: '/res/icons/processing/32.gif',
+        38: '/res/icons/processing/38.gif',
+        48: '/res/icons/processing/48.gif',
+      },
+    });
   },
 
-  _deactivateProcessing: async function(previousCurrentTabID) {
+  _deactivateProcessing: async function() {
     Redirects.processing = false;
-    await Redirects.showProcessingIcon(previousCurrentTabID);
-    const currentTabID = (await browser.tabs.query({active: true}))?.id;
-    await Redirects.showProcessingIcon(currentTabID);
+    await browser.browserAction.setTitle({title: 'Redirector'});
+    await browser.browserAction.setIcon({
+      path: {
+        16: '/res/icons/redirector/16.png',
+        19: '/res/icons/redirector/19.png',
+        32: '/res/icons/redirector/32.png',
+        38: '/res/icons/redirector/38.png',
+        48: '/res/icons/redirector/48.png',
+      },
+    });
   },
 
   generateRedirects: async function() {
-    const currentTabID = await Redirects._activateProcessing();
+    await Redirects._activateProcessing();
 
     Redirects._exceptions = {};
     Redirects._redirects.automatic = [];
-    Redirects._redirects.manual = [];
+    Redirects._redirects.manualSwap = [];
+    Redirects._redirects.manualOneWay = [];
     const opts = await Opts.get();
     for (const redirect of opts.redirects) {
       if (redirect.type === 'automatic') {
@@ -182,7 +231,7 @@ const Redirects = {
           to: JSON.parse(JSON.stringify(redirect.to)),
           active: redirect.active,
         });
-      } else if (redirect.type === 'manual') {
+      } else if (redirect.type === 'manual-swap') {
         const data = {
           urls: [],
           active: redirect.active,
@@ -196,11 +245,19 @@ const Redirects = {
           });
         }
 
-        Redirects._redirects.manual.push(data);
+        Redirects._redirects.manualSwap.push(data);
+      } else if (redirect.type === 'manual-oneway') {
+        Redirects._redirects.manualOneWay.push({
+          from: new RegExp(redirect.from.url),
+          to: redirect.to.url,
+          active: redirect.active,
+          toAlias: redirect.toAlias,
+        });
       }
     }
 
-    await Redirects._deactivateProcessing(currentTabID);
+    await Redirects._deactivateProcessing();
+    await Background.toggleManualRedirectForCurrentTab();
   },
 
   init: async function() {

@@ -23,7 +23,9 @@ const Communication = {
     'add-exception': async function(msg) { await Background.addException(msg.url, msg.idx); },
     'save-using-bookmark': async function() { return {result: BookmarkOpts._saveUsingBookmark}; },
 
-    'get-manual-options': async function() { return {result: await Redirects.getManualRedirectOptionsForCurrentTab()}; },
-    'move-to-manual-option': async function(msg) { await Redirects.doManualRedirectOnCurrentTabTo(msg.to); },
+    'get-manual-swap-options': async function() { return {result: await Redirects.getManualSwapRedirectOptionsForCurrentTab()}; },
+    'move-to-manual-swap-option': async function(msg) { await Redirects.doManualSwapRedirectOnCurrentTabTo(msg.to); },
+    'get-manual-oneway': async function() { return {result: await Redirects.getManualOneWayRedirectForCurrentTab()}; },
+    'move-to-manual-oneway': async function() { await Redirects.doManualOneWayRedirectOnCurrentTab(); },
   },
 };

@@ -35,9 +35,9 @@ class RedirectElement extends HTMLElement {
 .hidden { display: none !important; }
 
 div.root {
-  border-bottom: 1px solid #000;
-  margin-bottom: 5px;
-  padding-bottom: 5px;
+  border-bottom: 3px solid #000;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
 }
 
 .manual-url-option {
@@ -233,12 +233,20 @@ div.root {
     this._manualSwap.urls.push({container, alias, from, to});
   }
 
+  remove() {
+    this.dispatchEvent(new Event('remove-me'));
+  }
+
   get alias() {
     return this._alias.value;
   }
 
   get active() {
     return this._active.checked;
+  }
+
+  set active(value) {
+    this._active.checked = value;
   }
 
   get type() {

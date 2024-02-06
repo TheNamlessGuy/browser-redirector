@@ -108,7 +108,7 @@ const Redirects = {
   },
 
   getManualOneWayRedirect: function(url) {
-    if (url.startsWith('moz-extension://')) { return null; } // Internal page, no redirect from there
+    if (!url || url.startsWith('moz-extension://')) { return null; } // Internal page, no redirect from there
 
     for (let i = 0; i < Redirects._redirects.manualOneWay.length; ++i) {
       const redirect = Redirects._redirects.manualOneWay[i];
@@ -123,7 +123,7 @@ const Redirects = {
   },
 
   getManualSwapRedirect: function(url) {
-    if (url.startsWith('moz-extension://')) { return null; } // Internal page, no redirect from there
+    if (!url || url.startsWith('moz-extension://')) { return null; } // Internal page, no redirect from there
 
     for (let i = 0; i < Redirects._redirects.manualSwap.length; ++i) {
       const redirect = Redirects._redirects.manualSwap[i];

@@ -156,4 +156,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('save-btn').addEventListener('click', save);
   document.getElementById('add-new-area-btn').addEventListener('click', () => Area.add(null));
+  document.getElementById('collapse-all-areas-btn').addEventListener('click', () => {
+    const areas = Area.all();
+    const atLeastOneIsOpen = areas.some(x => !x.isCollapsed());
+    areas.forEach(x => x.toggleCollapse(atLeastOneIsOpen));
+  });
 });

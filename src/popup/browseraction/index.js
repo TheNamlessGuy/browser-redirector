@@ -60,6 +60,10 @@ const Area = {
     return Area.add(name);
   },
 
+  getAll: function() {
+    return Area._areas;
+  },
+
   none: function() {
     Area._container.innerText = 'No redirects found. Go to the options page and create some';
     Area._container.style.fontStyle = 'italic';
@@ -68,7 +72,7 @@ const Area = {
 
 async function save() {
   for (let i = 0; i < opts.redirects.length; ++i) {
-    opts.redirects[i].active = Area.get(opts.redirects[i].area).getRedirectActiveStatus(i);
+    opts.redirects[i].active = Area.get(opts.redirects[i].area).getRedirectActiveStatus(opts.redirects[i]);
   }
 
   await BackgroundPage.setOpts(opts);
@@ -88,4 +92,10 @@ window.addEventListener('DOMContentLoaded', async () => {
       Area.get(redirect.area).addRedirect(redirect);
     }
   }
+
+  document.getElementById('collapse-all-btn').addEventListener('click', () => {
+    const areas = Area.getAll();
+    const atLeastOneIsOpen = areas.some(x => !x.isCollapsed());
+    areas.forEach(x => x.toggleCollapse(atLeastOneIsOpen));
+  });
 });

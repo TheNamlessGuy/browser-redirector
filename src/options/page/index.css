@@ -1,5 +1,10 @@
 .hidden { display: none; }
 
+body > button {
+  margin: 5px;
+  text-align: center;
+}
+
 #save-btn,
 #add-new-area-btn {
   margin: 5px;

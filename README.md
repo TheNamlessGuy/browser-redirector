@@ -36,6 +36,10 @@ https://www.google.com/search?q=abcdef
     Transforms the match to lowercase (AbC => abc)
 * `uppercase`  
     Transforms the match to uppercase (aBc => ABC)
+* `encode`  
+    Maps directly to the builtin JS function [encodeURIComponent](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent)
+* `decode`  
+    Maps directly to the builtin JS function [decodeURIComponent](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/decodeURIComponent)
 * `ltrim(c)`  
     Removes the given character `c` from the left side of the match (`ltrim(+)` on `+++abc+++` => `abc+++`)
 * `rtrim(c)`  

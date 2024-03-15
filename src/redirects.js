@@ -26,6 +26,8 @@ const Redirects = {
   _formatFunctions: {
     lowercase: (x)    => x.toLowerCase(),
     uppercase: (x)    => x.toUpperCase(),
+    encode:    (x)    => encodeURIComponent(x),
+    decode:    (x)    => decodeURIComponent(x),
     trim:      (x, c) => Redirects._formatFunctions.ltrim(Redirects._formatFunctions.rtrim(x, c), c),
     ltrim:     (x, c) => {
       c = c ?? ' ';

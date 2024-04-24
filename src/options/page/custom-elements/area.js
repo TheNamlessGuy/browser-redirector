@@ -16,6 +16,8 @@ class RedirectionAreaElement extends HTMLElement {
     elements: [],
   };
 
+  errors = null;
+
   constructor() {
     super();
 
@@ -45,6 +47,9 @@ legend.area-name { cursor: pointer; }
     this._name.display.classList.add('area-name');
     this._name.display.addEventListener('click', () => this.toggleCollapse());
     container.appendChild(this._name.display);
+
+    this.errors = document.createElement('c-errors');
+    container.append(this.errors);
 
     this._content.hidden = document.createElement('div');
     this._content.hidden.classList.add('content-hidden', 'hidden');
@@ -138,6 +143,10 @@ legend.area-name { cursor: pointer; }
 
     this._content.all.classList.toggle('hidden', collapse);
     this._content.hidden.classList.toggle('hidden', !collapse);
+  }
+
+  validate() {
+    return true;
   }
 
   _atLeastOneRedirectIsActive() {

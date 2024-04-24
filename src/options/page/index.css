@@ -11,14 +11,6 @@ body > button {
   text-align: center;
 }
 
-#errors {
-  background-color: red;
-  color: white;
-  padding: 5px;
-  margin: 5px;
-  border-radius: 5px;
-}
-
 hr {
   width: 98%;
 }

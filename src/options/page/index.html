@@ -4,6 +4,7 @@
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <meta content="utf-8" http-equiv="encoding">
     <link rel="stylesheet" type="text/css" href="index.css">
+    <script src="custom-elements/errors.js"></script>
     <script src="custom-elements/labeled-checkbox.js"></script>
     <script src="custom-elements/labeled-input.js"></script>
     <script src="custom-elements/labeled-select.js"></script>
@@ -12,9 +13,15 @@
     <script src="index.js"></script>
   </head>
   <body>
+    <c-errors id="errors"></c-errors>
+
     <fieldset id="general">
       <legend>General settings</legend>
-      <label>Save using bookmark</label> <input id="general--save-using-bookmark" type="checkbox">
+      <labeled-checkbox id="general--save-using-bookmark" label="Save using bookmark"></labeled-checkbox>
+      <div style="display: flex; justify-content: space-around;">
+        <button id="general--export-settings">Export settings</button>
+        <button id="general--import-settings">Import settings</button>
+      </div>
     </fieldset>
 
     <button id="collapse-all-areas-btn">Toggle collapse for all areas</button>
@@ -22,7 +29,7 @@
     <hr>
 
     <div id="area-container"></div>
-    <div id="errors" class="hidden"></div>
+    <c-errors id="errors"></c-errors>
     <button id="add-new-area-btn">Add new area</button>
     <button id="save-btn">Save</button>
   </body>

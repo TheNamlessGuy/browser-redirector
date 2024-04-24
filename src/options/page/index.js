@@ -1,21 +1,3 @@
-const Errors = {
-  element: null,
-
-  init: function() {
-    Errors.element = document.getElementById('errors');
-  },
-
-  show: function(msg) {
-    Errors.element.classList.remove('hidden');
-    Errors.element.innerText = msg;
-  },
-
-  hide: function() {
-    Errors.element.classList.add('hidden');
-    Errors.element.innerText = '';
-  }
-};
-
 const Area = {
   container: null,
 
@@ -93,9 +75,7 @@ const BackgroundPage = {
   },
 };
 
-async function save() {
-  Errors.hide();
-
+async function _getData() {
   const opts = await BackgroundPage.getOptions();
   opts.redirects = [];
   const extras = {
@@ -103,16 +83,36 @@ async function save() {
   };
 
   const areas = Area.all();
+  for (const area of areas) {
+    area.errors.clear();
+
+    for (const redirect of area.redirects) {
+      redirect.errors.clear();
+    }
+  }
+
+  let success = true;
   const names = [];
   for (const area of areas) {
+    if (!area.validate()) {
+      success = false;
+      continue;
+    }
+
     const name = area.name;
     if (names.includes(name)) {
-      Errors.show(`Cannot have two areas with the same name. Hint: duplicate name is '${name ?? ''}'`);
-      return;
+      area.errors.addError(`Cannot have two areas with the same name`);
+      success = false;
+      continue;
     }
     names.push(name);
 
     for (const redirect of area.redirects) {
+      if (!redirect.validate()) {
+        success = false;
+        continue;
+      }
+
       const data = {
         area: name,
         active: redirect.active,
@@ -138,21 +138,64 @@ async function save() {
     }
   }
 
-  await BackgroundPage.setOptions(opts, extras);
-  await BackgroundPage.generateRedirects();
+  if (success) {
+    return {opts, extras};
+  }
+
+  return {opts: null, extras: null};
+}
+
+function load(opts, extras) {
+  document.getElementById('general--save-using-bookmark').checked = extras.saveUsingBookmarkOverride;
+
+  for (const redirect of opts.redirects) {
+    Area.get(redirect.area).addRedirect(redirect);
+  }
+}
+
+async function save() {
+  document.getElementById('errors').clear();
+
+  const {opts, extras} = await _getData();
+  if (opts != null) {
+    await BackgroundPage.setOptions(opts, extras);
+    await BackgroundPage.generateRedirects();
+  }
+}
+
+async function exportSettings() {
+  const {opts, extras} = await _getData();
+  prompt('The text below is an export of your settings, as they are displayed on this page (which might differ from what settings you have saved)', JSON.stringify(opts));
+}
+
+async function importSettings() {
+  const errors = document.getElementById('errors');
+  errors.clear();
+
+  const {opts, extras} = await _getData();
+  let data = prompt('Input the exported settings data below. Note that this will overwrite anything currently on the page');
+  try {
+    data = JSON.parse(data);
+  } catch (e) {
+    errors.addError('Could not parse the given data as a JSON. Nothing was imported');
+    return;
+  }
+
+  const areas = Area.all();
+  for (const area of areas) {
+    Area.remove(area);
+  }
+
+  load(data, extras);
+  errors.addWarning("Settings have been imported, but not saved. Don't forget to press the 'Save' button!");
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
   BackgroundPage.init();
-  Errors.init();
   Area.init();
 
-  document.getElementById('general--save-using-bookmark').checked = await BackgroundPage.saveUsingBookmark();
-
   const opts = await BackgroundPage.getOptions();
-  for (const redirect of opts.redirects) {
-    Area.get(redirect.area).addRedirect(redirect);
-  }
+  load(opts, {saveUsingBookmarkOverride: await BackgroundPage.saveUsingBookmark()});
 
   document.getElementById('save-btn').addEventListener('click', save);
   document.getElementById('add-new-area-btn').addEventListener('click', () => Area.add(null));
@@ -161,4 +204,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const atLeastOneIsOpen = areas.some(x => !x.isCollapsed());
     areas.forEach(x => x.toggleCollapse(atLeastOneIsOpen));
   });
+
+  document.getElementById('general--export-settings').addEventListener('click', () => exportSettings());
+  document.getElementById('general--import-settings').addEventListener('click', () => importSettings());
 });

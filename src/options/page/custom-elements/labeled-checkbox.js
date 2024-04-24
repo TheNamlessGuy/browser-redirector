@@ -24,6 +24,16 @@ label { cursor: pointer; }
     this._checkbox.addEventListener('change', () => this.dispatchEvent(new Event('change')));
     this._container.append(this._checkbox);
 
+    if (this.hasAttribute('checked')) {
+      this.checked = true;
+    } else {
+      this.checked = false;
+    }
+
+    if (this.hasAttribute('label')) {
+      this.label = this.getAttribute('label');
+    }
+
     this.attachShadow({mode: 'closed'}).append(style, this._container);
   }
 

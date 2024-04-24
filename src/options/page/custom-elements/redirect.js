@@ -4,6 +4,8 @@ class RedirectElement extends HTMLElement {
   _remove = null;
   _type = null;
 
+  errors = null;
+
   _manualSwap = {
     container: null,
     urls: [],
@@ -49,6 +51,9 @@ div.root {
 
     const container = document.createElement('div');
     container.classList.add('root');
+
+    this.errors = document.createElement('c-errors');
+    container.append(this.errors);
 
     this._remove = document.createElement('button');
     this._remove.innerText = 'Remove redirect';
@@ -235,6 +240,27 @@ div.root {
 
   remove() {
     this.dispatchEvent(new Event('remove-me'));
+  }
+
+  validate() {
+    if (this.type === 'automatic') {
+      if (!this.fromURL) {
+        this.errors.addError("'From' field cannot be empty");
+        return false;
+      }
+    } else if (this.type === 'manual-oneway') {
+      if (!this.fromURL) {
+        this.errors.addError("'From' field cannot be empty");
+        return false;
+      }
+    } else if (this.type === 'manual-swap') {
+      // Noop for now
+    } else {
+      this.errors.addError(`Unhandled type '${this.type}' in validate()`);
+      return false;
+    }
+
+    return true;
   }
 
   get alias() {

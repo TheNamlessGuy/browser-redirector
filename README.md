@@ -46,3 +46,6 @@ https://www.google.com/search?q=abcdef
     Removes the given character `c` from the right side of the match (`rtrim(+)` on `+++abc+++` => `+++abc`)
 * `trim(c)`  
     Removes the given character `c` from the left and right side of the match (`trim(+)` on `+++abc+++` => `abc`)
+
+## Cross-hosted
+This repository is hosted both on [GitHub](https://github.com/TheNamlessGuy/browser-redirector) and [Codeberg](https://codeberg.org/TheNamlessGuy/browser-redirector).
